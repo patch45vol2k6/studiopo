@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scriptwise – Write scripts for student films and projects</title>
+  <meta name="description" content="Scriptwise helps students write, format and share scripts for films, plays and class projects. Free to start.">
+  <meta property="og:title" content="Scriptwise – Write scripts for student projects">
+  <meta property="og:description" content="Write, format and share scripts for films, plays and class projects. Free to start.">
+  <meta property="og:type" content="website">
+  <style>
+    :root {
+      --ink: #1d1b19;
+      --muted: #5c5750;
+      --paper: #fbf9f5;
+      --surface: #ffffff;
+      --line: #e6e1d9;
+      --accent: #2f5d50;
+      --accent-ink: #ffffff;
+      --accent-soft: #e4efeb;
+      --radius: 10px;
+      --max: 1080px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --ink: #f3f0ea;
+        --muted: #b7b0a6;
+        --paper: #161513;
+        --surface: #1f1e1b;
+        --line: #36332e;
+        --accent: #7fc1ae;
+        --accent-ink: #10201b;
+        --accent-soft: #223a33;
+      }
+    }
+    :root[data-theme="dark"] {
+      --ink: #f3f0ea;
+      --muted: #b7b0a6;
+      --paper: #161513;
+      --surface: #1f1e1b;
+      --line: #36332e;
+      --accent: #7fc1ae;
+      --accent-ink: #10201b;
+      --accent-soft: #223a33;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: var(--accent); }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
+    .skip {
+      position: absolute; left: -9999px; top: 8px; background: var(--surface);
+      padding: 8px 12px; border-radius: 6px; z-index: 10;
+    }
+    .skip:focus { left: 8px; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+    header.site {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 0; gap: 16px; flex-wrap: wrap;
+    }
+    .brand { font-weight: 700; font-size: 1.15rem; text-decoration: none; color: var(--ink); }
+    nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; flex-wrap: wrap; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a:hover { color: var(--ink); text-decoration: underline; }
+
+    .btn {
+      display: inline-block; min-height: 44px; line-height: 44px; padding: 0 22px;
+      border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+      text-decoration: none; font-weight: 600; border: 0; font-size: 1rem; cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.05); }
+    .btn.ghost {
+      background: transparent; color: var(--ink); border: 1.5px solid var(--line);
+    }
+
+    .hero {
+      display: grid; gap: 40px; align-items: center;
+      padding: 56px 0 72px;
+    }
+    @media (min-width: 880px) {
+      .hero { grid-template-columns: 1.1fr 1fr; padding: 88px 0 96px; }
+    }
+    .eyebrow {
+      color: var(--accent); font-weight: 600; font-size: 0.9rem;
+      letter-spacing: .04em; text-transform: uppercase; margin: 0 0 12px;
+    }
+    h1 {
+      font-size: clamp(2.2rem, 5.2vw, 3.4rem); line-height: 1.1;
+      margin: 0 0 18px; letter-spacing: -0.02em;
+    }
+    .lede { font-size: 1.15rem; color: var(--muted); margin: 0 0 28px; max-width: 34em; }
+    .cta-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .micro { color: var(--muted); font-size: 0.92rem; margin-top: 14px; }
+
+    .script-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 28px; font-family: "Courier New", Courier, monospace; font-size: 0.95rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .script-card .scene { color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+    .script-card .char { text-align: center; font-weight: 700; margin-top: 12px; }
+    .script-card .line { margin: 2px 0 10px 18%; max-width: 70%; }
+    .script-card .action { margin-bottom: 10px; }
+
+    section.block { padding: 64px 0; border-top: 1px solid var(--line); }
+    section.block h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.01em;
+    }
+    .section-intro { color: var(--muted); max-width: 40em; margin: 0 0 36px; }
+
+    .steps {
+      display: grid; gap: 28px; list-style: none; padding: 0; margin: 0;
+    }
+    @media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+    .steps li { padding-top: 16px; border-top: 3px solid var(--accent); }
+    .steps h3 { margin: 0 0 6px; font-size: 1.1rem; }
+    .steps p { margin: 0; color: var(--muted); }
+
+    .features {
+      display: grid; gap: 20px; grid-template-columns: 1fr;
+    }
+    @media (min-width: 760px) { .features { grid-template-columns: 1fr 1fr; } }
+    .feature {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 24px;
+    }
+    .feature h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    .feature p { margin: 0; color: var(--muted); }
+
+    .placeholder {
+      border: 1.5px dashed var(--line); border-radius: var(--radius);
+      padding: 20px; color: var(--muted); font-style: italic; background: var(--surface);
+    }
+    .quotes {
+      display: grid; gap: 20px; grid-template-columns: 1fr;
+    }
+    @media (min-width: 760px) { .quotes { grid-template-columns: repeat(3, 1fr); } }
+
+    .faq details {
+      border-bottom: 1px solid var(--line); padding: 16px 0;
+    }
+    .faq summary {
+      cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center;
+    }
+    .faq details p { margin: 8px 0 0; color: var(--muted); }
+
+    .signup {
+      background: var(--accent-soft); border-radius: 14px; padding: 40px 28px; text-align: center;
+    }
+    .signup h2 { margin-top: 0; }
+    .signup form {
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px;
+    }
+    .signup label { position: absolute; left: -9999px; }
+    .signup input[type="email"] {
+      flex: 1 1 260px; max-width: 360px; min-height: 44px; padding: 0 14px;
+      border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface);
+      color: var(--ink); font-size: 1rem;
+    }
+    .form-msg { min-height: 1.5em; margin-top: 12px; color: var(--muted); }
+
+    footer.site {
+      border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: 0.92rem;
+    }
+    footer.site ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 18px; flex-wrap: wrap; }
+    footer.site a { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <div class="wrap">
+    <header class="site">
+      <a class="brand" href="#top" id="top">Scriptwise</a>
+      <nav aria-label="Main">
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </nav>
+    </header>
+  </div>
+
+  <main id="main">
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">For students</p>
+          <h1>Write your script without fighting the formatting.</h1>
+          <p class="lede">Scriptwise is a free script editor for student films, plays and class projects. Get proper screenplay formatting automatically, and share a draft with your group or teacher in one link.</p>
+          <div class="cta-row">
+            <a class="btn" href="#signup">Start writing for free</a>
+            <a class="btn ghost" href="#how">See how it works</a>
+          </div>
+          <p class="micro">Free to use. No credit card needed.</p>
+        </div>
+
+        <div class="script-card" aria-label="Example of a formatted script">
+          <p class="scene">INT. DORM ROOM – NIGHT</p>
+          <p class="action">Maya stares at a blank page. A laptop fan hums.</p>
+          <p class="char">MAYA</p>
+          <p class="line">The assignment is due in six hours.</p>
+          <p class="char">JONAH</p>
+          <p class="line">Then we start with the ending.</p>
+          <p class="action">She laughs, and starts typing.</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="block" id="how">
+      <div class="wrap">
+        <h2>How it works</h2>
+        <p class="section-intro">Three steps from first idea to a script you can hand in.</p>
+        <ol class="steps">
+          <li>
+            <h3>1. Start a script</h3>
+            <p>Pick a template for a short film, stage play or class scene. The format is set up for you.</p>
+          </li>
+          <li>
+            <h3>2. Write in the flow</h3>
+            <p>Press Tab to move between scene headings, action, character names and dialogue. The layout follows the standard format.</p>
+          </li>
+          <li>
+            <h3>3. Share and export</h3>
+            <p>Send a link to your group or teacher to read or comment. Export a PDF when it's time to submit.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="block" id="features">
+      <div class="wrap">
+        <h2>Built for school projects</h2>
+        <p class="section-intro">The tools you need for a draft, without the features you won't use.</p>
+        <div class="features">
+          <div class="feature">
+            <h3>Standard screenplay format</h3>
+            <p>Scene headings, action lines, character names and dialogue are formatted automatically, the way most teachers expect.</p>
+          </div>
+          <div class="feature">
+            <h3>Group drafts</h3>
+            <p>Invite classmates to edit or comment on the same script, and see who changed what.</p>
+          </div>
+          <div class="feature">
+            <h3>Scene and character list</h3>
+            <p>See every scene and every speaking character at a glance, so you can check the balance of your story.</p>
+          </div>
+          <div class="feature">
+            <h3>Export to PDF</h3>
+            <p>Download a clean PDF with page numbers and title page, ready to print or upload.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="proof-title">
+      <div class="wrap">
+        <h2 id="proof-title">What students say</h2>
+        <p class="section-intro">[Placeholder: replace with real student quotes, with permission, before publishing.]</p>
+        <div class="quotes">
+          <div class="placeholder">[Student quote 1: name, course, school]</div>
+          <div class="placeholder">[Student quote 2: name, course, school]</div>
+          <div class="placeholder">[Student quote 3: name, course, school]</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block faq" id="faq">
+      <div class="wrap">
+        <h2>Questions</h2>
+        <details>
+          <summary>Is Scriptwise really free?</summary>
+          <p>Yes. The core editor, formatting and sharing are free to use for students and class projects.</p>
+        </details>
+        <details>
+          <summary>Do I need to know screenplay formatting?</summary>
+          <p>No. The editor handles the layout, so you can focus on the story and the dialogue.</p>
+        </details>
+        <details>
+          <summary>Can my teacher see my script?</summary>
+          <p>Only if you share the link with them. Your draft stays private until you choose to share it.</p>
+        </details>
+        <details>
+          <summary>Can I import a script I already started?</summary>
+          <p>[Placeholder: confirm supported import formats before publishing.]</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="block" id="signup">
+      <div class="wrap">
+        <div class="signup">
+          <h2>Start your next script today</h2>
+          <p class="section-intro" style="margin: 0 auto;">Create a free account and open your first template in under a minute.</p>
+          <form id="signup-form" novalidate>
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="you@school.edu" required>
+            <button class="btn" type="submit">Create free account</button>
+          </form>
+          <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <ul>
+        <li><a href="#">Privacy</a></li>
+        <li><a href="#">Terms</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+      <p style="margin: 14px 0 0;">© 2026 Scriptwise. [Placeholder: add company details.]</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var form = document.getElementById('signup-form');
+      var input = document.getElementById('email');
+      var msg = document.getElementById('form-msg');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var value = input.value.trim();
+        if (!value || input.validity.typeMismatch || !input.checkValidity()) {
+          msg.textContent = 'Please enter a valid email address.';
+          input.setAttribute('aria-invalid', 'true');
+          input.focus();
+          return;
+        }
+        input.removeAttribute('aria-invalid');
+        // Placeholder: connect this form to your sign-up service before launch.
+        msg.textContent = 'Thanks! Check your inbox to finish creating your account.';
+        form.reset();
+      });
+    })();
+  </script>
+</body>
+</html>
