@@ -169,6 +169,33 @@
     }
     .form-msg { min-height: 1.5em; margin-top: 12px; color: var(--muted); }
 
+    .try { display: grid; gap: 28px; }
+    @media (min-width: 880px) { .try { grid-template-columns: 1fr 1.2fr; align-items: start; } }
+    .try label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .try-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .try-row input {
+      flex: 1 1 220px; min-height: 44px; padding: 0 14px; border-radius: 999px;
+      border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1rem;
+    }
+    .try-row .btn.ghost { min-width: 150px; }
+    .try-hint { color: var(--muted); font-size: 0.92rem; margin: 12px 0 0; }
+    .paper {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 28px; font-family: "Courier New", Courier, monospace; font-size: 0.95rem;
+      min-height: 260px; list-style: none; margin: 0;
+    }
+    .paper:empty::before { content: "Your script appears here."; color: var(--muted); font-style: italic; }
+    .sl { margin: 0 0 10px; }
+    .sl-scene { text-transform: uppercase; color: var(--muted); margin: 14px 0; }
+    .sl-character { text-align: center; font-weight: 700; text-transform: uppercase; margin-top: 12px; }
+    .sl-dialogue { margin: 0 0 10px 18%; max-width: 70%; }
+
+    html.js .reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
+    html.js .reveal.in { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      html.js .reveal { opacity: 1; transform: none; transition: none; }
+    }
+
     footer.site {
       border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: 0.92rem;
     }
@@ -185,6 +212,7 @@
       <nav aria-label="Main">
         <ul>
           <li><a href="#how">How it works</a></li>
+          <li><a href="#try">Try it</a></li>
           <li><a href="#features">Features</a></li>
           <li><a href="#faq">FAQ</a></li>
         </ul>
@@ -200,7 +228,7 @@
           <h1>Write your script without fighting the formatting.</h1>
           <p class="lede">Scriptwise is a free script editor for student films, plays and class projects. Get proper screenplay formatting automatically, and share a draft with your group or teacher in one link.</p>
           <div class="cta-row">
-            <a class="btn" href="#signup">Start writing for free</a>
+            <a class="btn" href="writer.html">Start writing for free</a>
             <a class="btn ghost" href="#how">See how it works</a>
           </div>
           <p class="micro">Free to use. No credit card needed.</p>
@@ -236,6 +264,28 @@
             <p>Send a link to your group or teacher to read or comment. Export a PDF when it's time to submit.</p>
           </li>
         </ol>
+      </div>
+    </section>
+
+    <section class="block" id="try" aria-labelledby="try-title">
+      <div class="wrap">
+        <h2 id="try-title">Try the formatting yourself</h2>
+        <p class="section-intro">Type a line, then press Tab to change what kind of line it is. Press Enter to add it to the script.</p>
+        <div class="try">
+          <div>
+            <label for="line-input">Your line</label>
+            <div class="try-row">
+              <input id="line-input" type="text" autocomplete="off" placeholder="e.g. INT. KITCHEN – DAY">
+              <button class="btn ghost" id="line-type" type="button">Type: Action</button>
+            </div>
+            <div class="try-row" style="margin-top: 10px;">
+              <button class="btn" id="line-add" type="button">Add line</button>
+            </div>
+            <p class="try-hint">Tab cycles forward and Shift+Tab goes back, so you can also use the Type button.</p>
+            <p class="form-msg" id="editor-status" role="status" aria-live="polite"></p>
+          </div>
+          <ol class="paper" id="script-output" aria-label="Your script preview"></ol>
+        </div>
       </div>
     </section>
 
@@ -327,6 +377,70 @@
 
   <script>
     (function () {
+      document.documentElement.classList.add('js');
+
+      // Reveal sections as they scroll into view (skipped for reduced motion via CSS).
+      var blocks = document.querySelectorAll('section.block');
+      blocks.forEach(function (el) { el.classList.add('reveal'); });
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+          });
+        }, { threshold: 0.12 });
+        blocks.forEach(function (el) { io.observe(el); });
+      } else {
+        blocks.forEach(function (el) { el.classList.add('in'); });
+      }
+
+      // Script editor demo: Tab cycles the line type, Enter adds the line.
+      var TYPES = [
+        { key: 'action', label: 'Action' },
+        { key: 'scene', label: 'Scene heading' },
+        { key: 'character', label: 'Character' },
+        { key: 'dialogue', label: 'Dialogue' }
+      ];
+      var typeIdx = 0;
+      var lineInput = document.getElementById('line-input');
+      var typeBtn = document.getElementById('line-type');
+      var addBtn = document.getElementById('line-add');
+      var output = document.getElementById('script-output');
+      var editorStatus = document.getElementById('editor-status');
+
+      function setType(i) {
+        typeIdx = (i + TYPES.length) % TYPES.length;
+        typeBtn.textContent = 'Type: ' + TYPES[typeIdx].label;
+      }
+      function addLine() {
+        var text = lineInput.value.trim();
+        if (!text) {
+          editorStatus.textContent = 'Type some text first.';
+          lineInput.focus();
+          return;
+        }
+        var t = TYPES[typeIdx];
+        var li = document.createElement('li');
+        li.className = 'sl sl-' + t.key;
+        li.textContent = (t.key === 'scene' || t.key === 'character') ? text.toUpperCase() : text;
+        output.appendChild(li);
+        lineInput.value = '';
+        editorStatus.textContent = 'Added ' + t.label.toLowerCase() + ' line. Tab changes the type for the next one.';
+        lineInput.focus();
+      }
+
+      lineInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          setType(typeIdx + (e.shiftKey ? -1 : 1));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          addLine();
+        }
+      });
+      typeBtn.addEventListener('click', function () { setType(typeIdx + 1); lineInput.focus(); });
+      addBtn.addEventListener('click', addLine);
+
+      // Sign-up form: basic validation only. Connect to a real service before launch.
       var form = document.getElementById('signup-form');
       var input = document.getElementById('email');
       var msg = document.getElementById('form-msg');
@@ -341,8 +455,9 @@
         }
         input.removeAttribute('aria-invalid');
         // Placeholder: connect this form to your sign-up service before launch.
-        msg.textContent = 'Thanks! Check your inbox to finish creating your account.';
+        msg.textContent = 'Thanks! Taking you to the writer…';
         form.reset();
+        setTimeout(function () { window.location.href = 'writer/writer.html'; }, 900);
       });
     })();
   </script>
