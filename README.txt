@@ -40,3 +40,4 @@ If PHP can't create the data/ folder or write document.json, check that
 the writer folder is writable by the web server user. On Windows/XAMPP
 this usually works by default; on Linux you may need:
   chmod -R 775 writer/data
+https://studiopo1.vercel.app/
