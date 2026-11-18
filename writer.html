@@ -64,6 +64,25 @@
       content: "Start writing your script..."; color: var(--muted); font-style: italic;
     }
 
+    .sl-scene { text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .sl-character { text-align: center; font-weight: 700; text-transform: uppercase; }
+    .sl-dialogue { margin-left: 18%; max-width: 70%; }
+    .sl-parenthetical { margin-left: 12%; max-width: 60%; font-style: italic; color: var(--muted); }
+    .sl-transition { text-align: right; text-transform: uppercase; color: var(--muted); }
+    .sl-shot { text-transform: uppercase; font-weight: 600; }
+    .hl { background: #ffe999; }
+    @media (prefers-color-scheme: dark) { .hl { background: #6b5a1f; } }
+    .hotkeys {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      padding: 8px 16px; background: var(--paper); border-bottom: 1px solid var(--line);
+      color: var(--muted); font-size: 0.82rem;
+    }
+    .hotkeys .hk { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .hotkeys kbd {
+      background: var(--surface); border: 1px solid var(--line); border-bottom-width: 2px;
+      border-radius: 5px; padding: 2px 6px; font-size: 0.78rem; font-family: inherit;
+      color: var(--ink); min-width: 1.6em; text-align: center;
+    }
     .msg { color: #b4231f; font-size: 0.88rem; }
     @media (prefers-color-scheme: dark) { .msg { color: #ff9b94; } }
     .visually-hidden {
@@ -73,6 +92,7 @@
 </head>
 <body>
   <header>
+    <a href="../index.html" class="btn ghost" style="min-height:40px;line-height:38px;padding:0 14px;">← Scriptwise</a>
     <label for="title-input" class="visually-hidden">Document title</label>
     <input id="title-input" type="text" placeholder="Untitled script" autocomplete="off">
     <span class="status" id="status" role="status" aria-live="polite">Loading…</span>
@@ -84,6 +104,19 @@
     <button type="button" data-cmd="bold" aria-pressed="false" title="Bold"><strong>B</strong></button>
     <button type="button" data-cmd="italic" aria-pressed="false" title="Italic"><em>I</em></button>
     <button type="button" data-cmd="underline" aria-pressed="false" title="Underline"><u>U</u></button>
+  </div>
+
+  <div class="hotkeys" aria-label="Keyboard shortcuts">
+    <span class="hk"><kbd>F1</kbd>Scene</span>
+    <span class="hk"><kbd>F2</kbd>Action</span>
+    <span class="hk"><kbd>F3</kbd>Character</span>
+    <span class="hk"><kbd>F4</kbd>Dialogue</span>
+    <span class="hk"><kbd>F5</kbd>Parenthetical</span>
+    <span class="hk"><kbd>F6</kbd>Transition</span>
+    <span class="hk"><kbd>F7</kbd>Shot</span>
+    <span class="hk"><kbd>F8</kbd>Highlight</span>
+    <span class="hk"><kbd>F9</kbd>Export .txt</span>
+    <span class="hk"><kbd>F10</kbd>Save</span>
   </div>
 
   <main>
@@ -196,6 +229,48 @@
       }
       document.addEventListener('selectionchange', function () {
         if (document.activeElement === editor) updateToolbarState();
+      });
+
+      // F-key hotkeys: set the current line's format, or run an action.
+      // F1 Scene  F2 Action  F3 Character  F4 Dialogue  F5 Parenthetical
+      // F6 Transition  F7 Shot  F8 Highlight selection  F9 Export .txt  F10 Save
+      var LINE_KEYS = {
+        F1: 'sl-scene', F2: 'sl-action', F3: 'sl-character',
+        F4: 'sl-dialogue', F5: 'sl-parenthetical', F6: 'sl-transition', F7: 'sl-shot'
+      };
+      function currentBlock() {
+        var node = window.getSelection().anchorNode;
+        while (node && node !== editor && node.nodeType !== 1) node = node.parentNode;
+        while (node && node.parentNode !== editor && node !== editor) node = node.parentNode;
+        return (node && node !== editor) ? node : null;
+      }
+      editor.addEventListener('keydown', function (e) {
+        if (LINE_KEYS[e.key]) {
+          e.preventDefault();
+          document.execCommand('formatBlock', false, 'p');
+          var block = currentBlock();
+          if (block) block.className = LINE_KEYS[e.key];
+          scheduleAutosave();
+        } else if (e.key === 'F8') {
+          e.preventDefault();
+          document.execCommand('hiliteColor', false, window.getSelection().toString() ? '' : null);
+          document.execCommand('styleWithCSS', true, null);
+          document.execCommand('backColor', false, '#ffe999');
+          scheduleAutosave();
+        } else if (e.key === 'F9') {
+          e.preventDefault();
+          var text = editor.innerText;
+          var blob = new Blob([text], { type: 'text/plain' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = (titleInput.value || 'script') + '.txt';
+          a.click();
+          URL.revokeObjectURL(a.href);
+        } else if (e.key === 'F10') {
+          e.preventDefault();
+          clearTimeout(saveTimer);
+          save();
+        }
       });
 
       load();
