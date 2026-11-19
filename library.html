@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scriptwise – Script library</title>
+  <style>
+    /* Cream palette — same tokens as index.html and writer.html. Fixed light theme. */
+    :root {
+      --paper: #f7f1e4;
+      --surface: #fffdf9;
+      --surface-high: #efe6d3;
+      --ink: #332b24;
+      --muted: #6b6054;
+      --line: #e4d9c4;
+      --accent: #a8524c;
+      --accent-ink: #fff8f0;
+      --accent-text: #8a3f3b;
+      --rim: rgba(168, 82, 76, .45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px; line-height: 1.5;
+    }
+    a { color: var(--accent-text); }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .skip {
+      position: absolute; left: -9999px; top: 8px; background: var(--surface);
+      padding: 8px 12px; border-radius: 6px; z-index: 30;
+    }
+    .skip:focus { left: 8px; }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+      padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar .brand { color: var(--ink); text-decoration: none; font-weight: 700; }
+    .topbar nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; }
+    .topbar nav a {
+      display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px;
+      border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 0.92rem;
+    }
+    .topbar nav a:hover { color: var(--ink); background: var(--paper); }
+    .topbar nav a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
+    .search {
+      margin-left: auto; flex: 0 1 260px; min-width: 160px; min-height: 38px; padding: 0 14px;
+      border: 1px solid var(--line); border-radius: 999px; background: var(--paper);
+      color: var(--ink); font-size: 0.95rem;
+    }
+
+    main { max-width: 1180px; margin: 0 auto; padding: 22px 20px 64px; }
+
+    /* ---------- Section header + filters ---------- */
+    .section-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+      padding-bottom: 12px; border-bottom: 1px solid var(--line);
+    }
+    .section-head h1 {
+      margin: 0; font-size: 0.9rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    }
+    .filters { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .filters label { font-size: 0.78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .filters select {
+      min-height: 36px; padding: 0 10px; border: 1px solid transparent; border-radius: 6px;
+      background: transparent; color: var(--ink); font-size: 0.85rem; text-transform: uppercase; letter-spacing: .04em; cursor: pointer;
+    }
+    .filters select:hover { border-color: var(--line); background: var(--surface); }
+
+    .count-bar {
+      margin: 18px 0 20px; padding: 12px; text-align: center; color: var(--muted);
+      background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 0.95rem;
+    }
+    .sample-note { font-size: 0.85rem; color: var(--muted); margin: 0 0 14px; font-style: italic; }
+
+    /* ---------- Grid ---------- */
+    .grid {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+    @media (min-width: 720px) { .grid { gap: 18px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+
+    .card {
+      position: relative; display: block; aspect-ratio: 2 / 3; border-radius: 6px; overflow: visible;
+      text-decoration: none; color: var(--ink);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .cover {
+      position: absolute; inset: 0; border-radius: 6px; overflow: hidden;
+      background: var(--tint, #e9d8c4); border: 1px solid var(--line);
+      display: flex; flex-direction: column; justify-content: space-between; padding: 14px 12px;
+    }
+    .cover .genre { font-size: 0.68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .cover .ttl { font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; line-height: 1.2; font-weight: 700; color: var(--ink); }
+    .cover .pages { font-size: 0.72rem; color: var(--muted); }
+
+    /* Hover / focus: lift the card and add a warm rim light around its edge. */
+    .card:hover, .card:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 0 0 2px var(--accent), 0 0 22px var(--rim), 0 10px 24px rgba(51,43,36,.18);
+      outline: none;
+    }
+
+    /* Hover card (tooltip) showing details, like the film title pop-up. */
+    .tip {
+      position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%) translateY(4px);
+      width: max-content; max-width: 240px; padding: 8px 12px; border-radius: 8px;
+      background: var(--ink); color: var(--accent-ink); font-size: 0.8rem; line-height: 1.4;
+      opacity: 0; pointer-events: none; transition: opacity .15s ease, transform .15s ease;
+      box-shadow: 0 6px 16px rgba(51,43,36,.25); text-align: center; z-index: 5;
+    }
+    .tip strong { display: block; font-size: 0.85rem; }
+    .card:hover .tip, .card:focus-visible .tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card, .tip { transition: none; }
+      .card:hover, .card:focus-visible { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <a class="brand" href="../index.html">← Scriptwise</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="writer.html">Writer</a></li>
+        <li><a href="library.html" aria-current="page">Script library</a></li>
+      </ul>
+    </nav>
+    <label for="search" class="visually-hidden" style="position:absolute;left:-9999px;">Search scripts</label>
+    <input id="search" class="search" type="search" placeholder="Search scripts" autocomplete="off">
+  </header>
+
+  <main id="main">
+    <div class="section-head">
+      <h1>Scripts</h1>
+      <div class="filters">
+        <label for="genre">Genre</label>
+        <select id="genre">
+          <option value="">All</option>
+          <option>Drama</option>
+          <option>Comedy</option>
+          <option>Thriller</option>
+          <option>Short film</option>
+          <option>Stage play</option>
+        </select>
+        <label for="sort">Sort by</label>
+        <select id="sort">
+          <option value="edited">Last edited</option>
+          <option value="title">Title</option>
+          <option value="pages">Pages</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="count-bar" id="count" role="status" aria-live="polite"></p>
+    <p class="sample-note">These are sample entries. Replace the list in the script below with your real scripts.</p>
+
+    <ul class="grid" id="grid"></ul>
+  </main>
+
+  <script>
+    (function () {
+      // ---- Replace with your real scripts. ----
+      // Each entry: title, genre, pages, draft, rev, edited (ISO date), tint (cover color).
+      // A real library would load these from writer.php (for example, a POST action=list),
+      // which means storing one record per script, not the single document the writer saves now.
+      var SCRIPTS = [
+        { title: 'Dorm Room Scene',     genre: 'Short film', pages: 4,  draft: 1, rev: 'A', edited: '2026-11-18', tint: '#e9d8c4' },
+        { title: 'The Last Bus',        genre: 'Drama',      pages: 22, draft: 2, rev: 'B', edited: '2026-11-17', tint: '#d9e0d3' },
+        { title: 'Lost Keys',           genre: 'Comedy',     pages: 11, draft: 1, rev: 'A', edited: '2026-11-10', tint: '#e3d3d0' },
+        { title: 'Night Shift',         genre: 'Thriller',   pages: 35, draft: 3, rev: 'A', edited: '2026-11-15', tint: '#d8dde6' },
+        { title: 'Two Chairs',          genre: 'Stage play', pages: 18, draft: 1, rev: 'C', edited: '2026-11-08', tint: '#ece0c8' },
+        { title: 'Rooftop',             genre: 'Short film', pages: 6,  draft: 2, rev: 'A', edited: '2026-11-12', tint: '#dfe6e1' },
+        { title: 'Heat Wave',           genre: 'Drama',      pages: 28, draft: 1, rev: 'A', edited: '2026-11-01', tint: '#eadbd0' },
+        { title: 'Open Mic',            genre: 'Comedy',     pages: 9,  draft: 4, rev: 'B', edited: '2026-10-29', tint: '#e5dfd0' },
+        { title: 'Signal Lost',         genre: 'Thriller',   pages: 40, draft: 2, rev: 'A', edited: '2026-11-14', tint: '#d6dbe3' },
+        { title: 'Bus Stop Confession', genre: 'Short film', pages: 3,  draft: 1, rev: 'A', edited: '2026-11-16', tint: '#e8dcd6' }
+      ];
+
+      var grid = document.getElementById('grid');
+      var count = document.getElementById('count');
+      var search = document.getElementById('search');
+      var genreSel = document.getElementById('genre');
+      var sortSel = document.getElementById('sort');
+
+      function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function visible() {
+        var q = search.value.trim().toLowerCase();
+        var g = genreSel.value;
+        var list = SCRIPTS.filter(function (s) {
+          return (!g || s.genre === g) && (!q || s.title.toLowerCase().indexOf(q) !== -1);
+        });
+        var sort = sortSel.value;
+        list.sort(function (a, b) {
+          if (sort === 'title') return a.title.localeCompare(b.title);
+          if (sort === 'pages') return b.pages - a.pages;
+          return b.edited.localeCompare(a.edited); // newest first
+        });
+        return list;
+      }
+
+      function render() {
+        var list = visible();
+        count.textContent = 'There are ' + list.length + ' script' + (list.length === 1 ? '' : 's') + '.';
+
+        if (!list.length) {
+          grid.innerHTML = '<li class="empty">No scripts match these filters.</li>';
+          return;
+        }
+
+        grid.innerHTML = list.map(function (s) {
+          var label = esc(s.title) + ', ' + esc(s.genre) + ', ' + s.pages + ' pages, Draft ' + s.draft + ' Rev ' + s.rev;
+          return '<li>' +
+            '<a class="card" href="writer.html" style="--tint:' + s.tint + '" aria-label="' + label + '">' +
+              '<span class="cover">' +
+                '<span class="genre">' + esc(s.genre) + '</span>' +
+                '<span class="ttl">' + esc(s.title) + '</span>' +
+                '<span class="pages">' + s.pages + ' pages</span>' +
+              '</span>' +
+              '<span class="tip" aria-hidden="true">' +
+                '<strong>' + esc(s.title) + '</strong>' +
+                esc(s.genre) + ' · ' + s.pages + ' pages<br>' +
+                'Draft ' + s.draft + ' · Rev ' + esc(s.rev) + '<br>' +
+                'Edited ' + esc(s.edited) +
+              '</span>' +
+            '</a>' +
+          '</li>';
+        }).join('');
+      }
+
+      search.addEventListener('input', render);
+      genreSel.addEventListener('change', render);
+      sortSel.addEventListener('change', render);
+      render();
+    })();
+  </script>
+</body>
+</html>
