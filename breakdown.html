@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scriptwise – Script breakdown</title>
+  <style>
+    /* Cream palette — same tokens as the rest of the app. Fixed light theme. */
+    :root {
+      --paper: #f7f1e4;
+      --surface: #fffdf9;
+      --surface-high: #efe6d3;
+      --ink: #332b24;
+      --muted: #6b6054;
+      --line: #e4d9c4;
+      --accent: #a8524c;
+      --accent-ink: #fff8f0;
+      --accent-text: #8a3f3b;
+      --act1: #e9d8c4;
+      --act2: #d9c3b6;
+      --act3: #d6dbcf;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px; line-height: 1.5;
+    }
+    a { color: var(--accent-text); }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .skip {
+      position: absolute; left: -9999px; top: 8px; background: var(--surface);
+      padding: 8px 12px; border-radius: 6px; z-index: 30;
+    }
+    .skip:focus { left: 8px; }
+    .visually-hidden { position: absolute; left: -9999px; }
+
+    /* ---------- Top bar (same as the library) ---------- */
+    .topbar {
+      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+      padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar .brand { color: var(--ink); text-decoration: none; font-weight: 700; }
+    .topbar nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; }
+    .topbar nav a {
+      display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px;
+      border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 0.92rem;
+    }
+    .topbar nav a:hover { color: var(--ink); background: var(--paper); }
+    .topbar nav a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 22px 20px 64px; }
+    .section-head {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      padding-bottom: 12px; border-bottom: 1px solid var(--line);
+    }
+    .section-head h1 {
+      margin: 0; font-size: 0.9rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    }
+    .section-head .meta { color: var(--muted); font-size: 0.9rem; }
+    .section-head .meta strong { color: var(--ink); }
+
+    .panel {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+      padding: 20px; margin-top: 20px;
+    }
+    .panel h2 { margin: 0 0 6px; font-size: 1rem; }
+    .panel .hint { margin: 0 0 14px; color: var(--muted); font-size: 0.86rem; }
+
+    /* ---------- Three-act chart ---------- */
+    .chart { position: relative; padding-top: 92px; padding-bottom: 6px; }
+    .track {
+      position: relative; height: 46px; border-radius: 8px; overflow: visible;
+      display: grid; grid-template-columns: 25% 25% 50%; /* Act One 0–25%, Act Two 25–75%, Act Three 75–100% */
+      border: 1px solid var(--line);
+    }
+    .act { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--ink); font-weight: 600; }
+    .act.a1 { background: var(--act1); border-radius: 8px 0 0 8px; }
+    .act.a2 { background: var(--act2); }
+    .act.a3 { background: var(--act3); border-radius: 0 8px 8px 0; }
+    .act-label { position: absolute; top: 58px; font-size: 0.78rem; color: var(--muted); }
+
+    .tick {
+      position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); opacity: .55;
+    }
+    .tick-btn {
+      position: absolute; top: 4px; bottom: 4px; width: 14px; margin-left: -7px;
+      background: transparent; border: 0; cursor: pointer; padding: 0;
+    }
+    .tick-btn::after {
+      content: ""; position: absolute; left: 50%; top: 0; height: 12px; width: 2px; margin-left: -1px;
+      background: var(--ink); opacity: .35;
+    }
+    .tick-btn:hover::after, .tick-btn:focus-visible::after { opacity: 1; background: var(--accent); width: 3px; margin-left: -1.5px; }
+
+    .beat {
+      position: absolute; top: -48px; transform: translateX(-50%); text-align: center;
+      font-size: 0.7rem; color: var(--ink); line-height: 1.2; width: 92px; pointer-events: none;
+    }
+    .beat.high { top: -84px; }
+    .beat .star { display: block; color: var(--accent); font-size: 1.1rem; line-height: 1; }
+    .beat .pct { display: block; color: var(--muted); }
+
+    .scale { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.75rem; color: var(--muted); }
+
+    /* ---------- Act cards ---------- */
+    .acts { display: grid; gap: 16px; margin-top: 20px; grid-template-columns: 1fr; }
+    @media (min-width: 820px) { .acts { grid-template-columns: repeat(3, 1fr); } }
+    .act-card { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: var(--surface); }
+    .act-card h3 { margin: 0; font-size: 1rem; }
+    .act-card .sub { color: var(--muted); font-size: 0.82rem; margin: 2px 0 10px; }
+    .act-card .stat { font-size: 0.85rem; color: var(--muted); margin: 0 0 8px; }
+    .act-card ol { margin: 0; padding-left: 18px; font-size: 0.88rem; }
+    .act-card li { margin: 2px 0; }
+    .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; border: 1px solid var(--line); }
+
+    /* ---------- Scene table ---------- */
+    .scenes { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .scenes th, .scenes td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .scenes th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: .05em; }
+    .scenes td.num { color: var(--muted); width: 48px; }
+    .scenes td.heading { font-weight: 600; }
+    .scenes tr:hover td { background: var(--paper); }
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.74rem;
+      border: 1px solid var(--line); background: var(--paper); white-space: nowrap;
+    }
+    .chars { color: var(--muted); font-size: 0.82rem; }
+    .table-wrap { overflow-x: auto; }
+    .scenes tr.flash td { background: #f3dfa6; transition: background 1.2s ease; }
+
+    .notice { color: var(--muted); padding: 24px 4px; }
+    .err { color: #9c3b2e; }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <a class="brand" href="../index.html">← Scriptwise</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="writer.html">Writer</a></li>
+        <li><a href="library.html">Script library</a></li>
+        <li><a href="breakdown.html" aria-current="page">Script breakdown</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="section-head">
+      <h1>Script breakdown</h1>
+      <p class="meta" id="meta" role="status" aria-live="polite">Loading…</p>
+    </div>
+
+    <p class="notice" id="notice" hidden></p>
+
+    <section class="panel" id="chart-panel" aria-labelledby="chart-title" hidden>
+      <h2 id="chart-title">Three-act structure</h2>
+      <p class="hint">Scenes are placed by where they fall in the script (by length). Beats use typical positions for each act, not measured from your script. Click a scene tick to jump to it in the table.</p>
+      <div class="chart" id="chart"></div>
+      <div class="scale"><span>Start</span><span>25%</span><span>50%</span><span>75%</span><span>End</span></div>
+    </section>
+
+    <section class="acts" id="acts" aria-label="Acts" hidden></section>
+
+    <section class="panel" id="table-panel" aria-labelledby="table-title" hidden>
+      <h2 id="table-title">Scenes</h2>
+      <p class="hint">Page numbers are estimates (about 55 lines per page, 60 characters per line).</p>
+      <div class="table-wrap">
+        <table class="scenes">
+          <thead>
+            <tr><th scope="col">#</th><th scope="col">Scene</th><th scope="col">Act</th><th scope="col">Pages</th><th scope="col">Characters</th></tr>
+          </thead>
+          <tbody id="scene-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      // Approximate screenplay geometry, same as the writer's page estimate.
+      // Same measure as the writer: ~60 characters per line, 55 lines per page.
+      var CHARS_PER_LINE = 60;
+      var LINES_PER_PAGE = 55;
+
+      // Typical positions of story beats along the script, as a fraction of its length.
+      // Guidelines from the three-act structure diagram, not measured from the script.
+      var BEATS = [
+        { label: 'Inciting incident', pct: 0.12 },
+        { label: 'Climax of Act One', pct: 0.25 },
+        { label: 'Midpoint (twist)', pct: 0.50 },
+        { label: 'Crisis', pct: 0.70 },
+        { label: 'Climax of Act Two', pct: 0.75 },
+        { label: 'Climax of Act Three', pct: 0.90 },
+        { label: 'Denouement', pct: 0.97 }
+      ];
+
+      var $ = function (id) { return document.getElementById(id); };
+      var meta = $('meta'), notice = $('notice');
+
+      function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      // Split the saved script into scenes. A scene starts at a line marked as a scene
+      // heading (F1 in the writer) or one that starts with INT./EXT.
+      function parseScenes(html) {
+        var doc = new DOMParser().parseFromString(html || '', 'text/html');
+        var scenes = [];
+        var current = { heading: 'Opening', chars: 0, lines: 0, characters: [] };
+
+        Array.prototype.forEach.call(doc.body.childNodes, function (node) {
+          var text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+          if (!text) return;
+          var isHeading = (node.classList && node.classList.contains('sl-scene')) ||
+                          /^(INT|EXT|I\/E)[.\s]/i.test(text);
+          if (isHeading) {
+            if (current.chars > 0 || scenes.length) scenes.push(current);
+            current = { heading: text.toUpperCase(), chars: 0, lines: 0, characters: [] };
+          }
+          if (node.classList && node.classList.contains('sl-character')) {
+            var name = text.replace(/\(.*?\)/g, '').trim().toUpperCase();
+            if (name && current.characters.indexOf(name) === -1) current.characters.push(name);
+          }
+          // One block = its wrapped lines plus one blank line, as the writer's estimate counts it.
+          current.lines += Math.ceil(text.length / CHARS_PER_LINE) + 1;
+          current.chars += text.length;
+        });
+        if (current.chars > 0) scenes.push(current);
+
+        return scenes.filter(function (s) { return s.chars > 0; });
+      }
+
+      function render(data) {
+        var scenes = parseScenes(data.content);
+        if (!scenes.length) {
+          meta.textContent = '';
+          notice.hidden = false;
+          notice.textContent = 'No scenes found. Mark scene headings in the writer with F1, or start them with INT. or EXT.';
+          return;
+        }
+
+        var total = scenes.reduce(function (sum, s) { return sum + s.lines; }, 0);
+        var cum = 0;
+        scenes.forEach(function (s, i) {
+          s.index = i + 1;
+          s.start = cum / total;
+          s.pages = Math.max(0.1, s.lines / LINES_PER_PAGE);
+          cum += s.lines;
+          s.act = s.start < 0.25 ? 1 : (s.start < 0.75 ? 2 : 3);
+        });
+        var pages = Math.max(1, Math.round(total / LINES_PER_PAGE));
+        var title = data.title || 'Untitled script';
+
+        meta.innerHTML = '<strong>' + esc(title) + '</strong> · ' + pages + (pages === 1 ? ' page' : ' pages') +
+                         ' · ' + scenes.length + (scenes.length === 1 ? ' scene' : ' scenes');
+        notice.hidden = true;
+
+        drawChart(scenes);
+        drawActs(scenes);
+        drawTable(scenes);
+      }
+
+      function drawChart(scenes) {
+        var chart = $('chart');
+        var html = '<div class="track" role="img" aria-label="Act One 0 to 25 percent, Act Two 25 to 75 percent, Act Three 75 to 100 percent">' +
+          '<div class="act a1">Act One · set up</div>' +
+          '<div class="act a2">Act Two · confrontation</div>' +
+          '<div class="act a3">Act Three · resolution</div>';
+
+        scenes.forEach(function (s) {
+          var left = (s.start * 100).toFixed(2) + '%';
+          html += '<button class="tick-btn" type="button" style="left:' + left + '" data-scene="' + s.index +
+                  '" aria-label="Scene ' + s.index + ': ' + esc(s.heading) + '"></button>';
+        });
+
+        BEATS.forEach(function (b, i) {
+          // Alternate beats between two label rows so close neighbours don't overlap.
+          var row = i % 2 ? ' high' : '';
+          html += '<div class="beat' + row + '" style="left:' + (b.pct * 100).toFixed(2) + '%">' +
+                  '<span class="star">✶</span>' + esc(b.label) + '<span class="pct">' + Math.round(b.pct * 100) + '%</span></div>';
+        });
+        html += '</div>';
+        chart.innerHTML = html;
+
+        chart.querySelectorAll('.tick-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var row = document.getElementById('scene-' + btn.dataset.scene);
+            if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); row.classList.add('flash'); }
+          });
+        });
+        $('chart-panel').hidden = false;
+      }
+
+      function drawActs(scenes) {
+        var names = { 1: 'Act One', 2: 'Act Two', 3: 'Act Three' };
+        var subs = { 1: 'Set up', 2: 'Confrontation', 3: 'Resolution' };
+        var swatch = { 1: 'var(--act1)', 2: 'var(--act2)', 3: 'var(--act3)' };
+        var html = '';
+        [1, 2, 3].forEach(function (a) {
+          var list = scenes.filter(function (s) { return s.act === a; });
+          var pages = list.reduce(function (sum, s) { return sum + s.pages; }, 0);
+          var beats = BEATS.filter(function (b) {
+            return (a === 1 && b.pct < 0.25) || (a === 2 && b.pct >= 0.25 && b.pct < 0.75) || (a === 3 && b.pct >= 0.75);
+          });
+          html += '<article class="act-card"><h3><span class="swatch" style="background:' + swatch[a] + '"></span>' +
+            names[a] + '</h3><p class="sub">' + subs[a] + '</p>' +
+            '<p class="stat">' + list.length + (list.length === 1 ? ' scene' : ' scenes') + ' · about ' +
+            Math.round(pages) + (Math.round(pages) === 1 ? ' page' : ' pages') + '</p>';
+          if (beats.length) {
+            html += '<ol>' + beats.map(function (b) {
+              var near = nearestScene(scenes, b.pct);
+              return '<li>' + esc(b.label) + (near ? ' → scene ' + near.index + ': ' + esc(near.heading) : '') + '</li>';
+            }).join('') + '</ol>';
+          } else if (list.length) {
+            html += '<ol>' + list.slice(0, 6).map(function (s) {
+              return '<li>' + esc(s.heading) + '</li>';
+            }).join('') + (list.length > 6 ? '<li>…</li>' : '') + '</ol>';
+          } else {
+            html += '<p class="stat">No scenes in this act yet.</p>';
+          }
+          html += '</article>';
+        });
+        $('acts').innerHTML = html;
+        $('acts').hidden = false;
+      }
+
+      function nearestScene(scenes, pct) {
+        var best = null, bestDiff = Infinity;
+        scenes.forEach(function (s) {
+          var d = Math.abs(s.start - pct);
+          if (d < bestDiff) { best = s; bestDiff = d; }
+        });
+        return best;
+      }
+
+      function drawTable(scenes) {
+        var rows = scenes.map(function (s) {
+          var chars = s.characters.length ? s.characters.slice(0, 6).join(', ') + (s.characters.length > 6 ? '…' : '') : '—';
+          var pages = s.pages < 1 ? '< 1' : (Math.round(s.pages * 10) / 10).toFixed(s.pages < 10 ? 1 : 0);
+          return '<tr id="scene-' + s.index + '">' +
+            '<td class="num">' + s.index + '</td>' +
+            '<td class="heading">' + esc(s.heading) + '</td>' +
+            '<td><span class="pill">Act ' + ['One', 'Two', 'Three'][s.act - 1] + '</span></td>' +
+            '<td>' + pages + '</td>' +
+            '<td class="chars">' + esc(chars) + '</td>' +
+            '</tr>';
+        }).join('');
+        $('scene-rows').innerHTML = rows;
+        $('table-panel').hidden = false;
+      }
+
+      // Load the saved script from writer.php (needs XAMPP running).
+      fetch('writer.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=load'
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) throw new Error(d.error || 'Could not load the script.');
+          if (!d.savedAt) {
+            meta.textContent = '';
+            notice.hidden = false;
+            notice.textContent = 'No saved script yet. Write one in the writer, then come back here.';
+            return;
+          }
+          render(d);
+        })
+        .catch(function (err) {
+          meta.textContent = '';
+          notice.hidden = false;
+          notice.className = 'notice err';
+          notice.textContent = 'Could not load the script: ' + err.message + ' (Is XAMPP running?)';
+        });
+    })();
+  </script>
+</body>
+</html>
